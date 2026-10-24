@@ -48,7 +48,12 @@ public enum Indicator {
                 .replace("_", "")
                 .replace("₂", "2")
                 .replace("₃", "3");
-        return Indicator.valueOf(normalized);
+        try {
+            return Indicator.valueOf(normalized);
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException("不支持的指标：" + value);
+        }
     }
 }
+
 
