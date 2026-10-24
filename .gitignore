@@ -1,5 +1,7 @@
 target/
 .m2/
+.codex-ppt-build/
+.codex-finalizer/
 .idea/
 *.iml
 data/
