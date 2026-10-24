@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: air-quality-dashboard
+  datasource:
+    url: jdbc:h2:file:./data/airquality;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jackson:
+    time-zone: Asia/Shanghai
+
+server:
+  port: 8080
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+
