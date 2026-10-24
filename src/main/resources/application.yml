@@ -2,7 +2,7 @@ spring:
   application:
     name: air-quality-dashboard
   datasource:
-    url: jdbc:h2:file:./data/airquality;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:file:./data/airquality
     driver-class-name: org.h2.Driver
     username: sa
     password:
