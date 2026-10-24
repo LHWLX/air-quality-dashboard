@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="城市空气质量监测数据可视化看板">
+    <title>城市空气质量监测看板</title>
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<header class="app-header">
+    <div class="brand-block">
+        <div class="brand-mark" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+        </div>
+        <div>
+            <p class="eyebrow">AIR QUALITY OBSERVATORY</p>
+            <h1>城市空气质量监测</h1>
+        </div>
+    </div>
+    <div class="header-status" aria-label="系统状态">
+        <span class="status-dot"></span>
+        <span>监测服务正常</span>
+        <time id="currentTime"></time>
+    </div>
+</header>
+
+<main class="dashboard-shell">
+    <aside class="filter-panel" aria-label="筛选条件">
+        <div class="panel-heading">
+            <div>
+                <p class="section-kicker">FILTERS</p>
+                <h2>数据筛选</h2>
+            </div>
+            <button class="icon-button" id="resetButton" type="button" title="重置筛选" aria-label="重置筛选">↻</button>
+        </div>
+
+        <fieldset class="filter-group">
+            <legend>监测城市</legend>
+            <div class="city-options" id="cityOptions" aria-live="polite"></div>
+        </fieldset>
+
+        <fieldset class="filter-group">
+            <legend>时间范围</legend>
+            <label class="field-label" for="startDate">开始日期</label>
+            <input id="startDate" type="date">
+            <label class="field-label" for="endDate">结束日期</label>
+            <input id="endDate" type="date">
+        </fieldset>
+
+        <fieldset class="filter-group">
+            <legend>监测指标</legend>
+            <div class="indicator-grid" id="indicatorOptions">
+                <label><input type="radio" name="indicator" value="PM25" checked><span>PM2.5</span></label>
+                <label><input type="radio" name="indicator" value="PM10"><span>PM10</span></label>
+                <label><input type="radio" name="indicator" value="SO2"><span>SO₂</span></label>
+                <label><input type="radio" name="indicator" value="NO2"><span>NO₂</span></label>
+                <label><input type="radio" name="indicator" value="O3"><span>O₃</span></label>
+                <label><input type="radio" name="indicator" value="AQI"><span>AQI</span></label>
+            </div>
+        </fieldset>
+
+        <button class="primary-button" id="applyButton" type="button">
+            <span aria-hidden="true">⌁</span>
+            更新看板
+        </button>
+        <p class="filter-meta" id="filterMeta">正在载入城市数据</p>
+    </aside>
+
+    <section class="dashboard-content">
+        <div class="content-heading">
+            <div>
+                <p class="section-kicker">OVERVIEW</p>
+                <h2 id="overviewTitle">空气质量总览</h2>
+            </div>
+            <div class="date-badge" id="dateBadge">最近 30 天</div>
+        </div>
+
+        <section class="metric-grid" aria-label="核心指标">
+            <article class="metric-card metric-primary">
+                <span class="metric-label">平均浓度</span>
+                <strong id="averageMetric">--</strong>
+                <span class="metric-unit" id="averageUnit">μg/m³</span>
+            </article>
+            <article class="metric-card">
+                <span class="metric-label">优良天占比</span>
+                <strong id="goodDayMetric">--</strong>
+                <span class="metric-unit">%</span>
+            </article>
+            <article class="metric-card">
+                <span class="metric-label">记录数量</span>
+                <strong id="recordMetric">--</strong>
+                <span class="metric-unit">条</span>
+            </article>
+            <article class="metric-card">
+                <span class="metric-label">峰值城市</span>
+                <strong class="metric-city" id="peakCityMetric">--</strong>
+                <span class="metric-unit" id="peakValueMetric">--</span>
+            </article>
+        </section>
+
+        <section class="chart-panel trend-panel">
+            <div class="chart-heading">
+                <div>
+                    <h3>浓度变化趋势</h3>
+                    <p id="trendSubtitle">按日期展示所选城市指标变化</p>
+                </div>
+                <div class="chart-legend-note"><span></span> 日均监测值</div>
+            </div>
+            <div class="chart chart-large" id="trendChart" role="img" aria-label="空气质量趋势折线图"></div>
+        </section>
+
+        <div class="chart-grid">
+            <section class="chart-panel">
+                <div class="chart-heading">
+                    <div>
+                        <h3>城市均值对比</h3>
+                        <p>按当前筛选时间段统计</p>
+                    </div>
+                </div>
+                <div class="chart" id="comparisonChart" role="img" aria-label="城市指标均值柱状图"></div>
+            </section>
+            <section class="chart-panel">
+                <div class="chart-heading">
+                    <div>
+                        <h3>质量等级分布</h3>
+                        <p>监测天数占比</p>
+                    </div>
+                </div>
+                <div class="chart" id="distributionChart" role="img" aria-label="空气质量等级环形图"></div>
+            </section>
+        </div>
+
+        <section class="table-panel">
+            <div class="table-heading">
+                <div>
+                    <h3>监测数据明细</h3>
+                    <p id="tableSummary">每页显示 10 条记录</p>
+                </div>
+                <span class="table-count" id="tableCount">0 条</span>
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>城市</th>
+                        <th id="indicatorHeader">PM2.5</th>
+                        <th>AQI</th>
+                        <th>质量等级</th>
+                        <th><span class="visually-hidden">操作</span></th>
+                    </tr>
+                    </thead>
+                    <tbody id="dataTableBody"></tbody>
+                </table>
+            </div>
+            <div class="pagination" aria-label="数据分页">
+                <button class="icon-button" id="previousPage" type="button" aria-label="上一页" title="上一页">‹</button>
+                <span id="pageIndicator">第 1 / 1 页</span>
+                <button class="icon-button" id="nextPage" type="button" aria-label="下一页" title="下一页">›</button>
+            </div>
+        </section>
+    </section>
+</main>
+
+<dialog id="detailDialog" class="detail-dialog">
+    <div class="dialog-heading">
+        <div>
+            <p class="section-kicker">RECORD DETAIL</p>
+            <h2 id="detailTitle">监测记录详情</h2>
+        </div>
+        <button class="icon-button" id="closeDialog" type="button" aria-label="关闭详情" title="关闭">×</button>
+    </div>
+    <div class="detail-grid" id="detailGrid"></div>
+</dialog>
+
+<div class="loading-layer" id="loadingLayer" role="status" aria-live="polite">
+    <div class="loading-spinner"></div>
+    <span>正在更新监测数据</span>
+</div>
+
+<div class="toast" id="toast" role="alert"></div>
+
+<script src="/webjars/echarts/5.5.1/dist/echarts.min.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>
+
