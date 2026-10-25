@@ -1,6 +1,6 @@
 # 城市空气质量监测看板
 
-这是一个按课程项目要求完成的城市空气质量数据看板。项目使用 Spring Boot 3、JDK 17、Spring Data JPA、H2、原生 HTML/CSS/JavaScript、fetch 和 ECharts，实现多城市筛选、日期筛选、指标切换、趋势分析、城市对比、质量等级分布、明细分页和单条记录查询。
+这是一个城市空气质量数据看板。项目使用 Spring Boot 3、JDK 25、Spring Data JPA、H2、原生 HTML/CSS/JavaScript、fetch 和 ECharts，实现多城市筛选、日期筛选、指标切换、趋势分析、城市对比、质量等级分布、明细分页和单条记录查询。
 
 ## 运行效果
 
@@ -15,7 +15,8 @@
 
 | 层级 | 技术 |
 | --- | --- |
-| 后端 | Spring Boot 3.3.5、Spring Web、Spring Data JPA |
+| 后端 | Spring Boot 3.5.16、Spring Web、Spring Data JPA |
+| Java | Oracle JDK 25 LTS |
 | 数据库 | H2 文件数据库 |
 | API 文档 | springdoc OpenAPI、Swagger UI |
 | 前端 | HTML5、CSS3、JavaScript ES6+、fetch |
@@ -27,7 +28,7 @@
 ### 方式一 使用 IntelliJ IDEA
 
 1. 用 IntelliJ IDEA 打开本项目根目录。
-2. 确认 Project SDK 为 JDK 17。
+2. 确认 Project SDK 为 JDK 25。
 3. 等待 Maven 依赖下载完成。
 4. 运行 `AirQualityDashboardApplication`。
 5. 浏览器访问 `http://localhost:8080/`。
@@ -148,7 +149,7 @@ git log --oneline
 ## 你提交前必须完成的内容
 
 1. 把 README、PPT 和 AI 使用记录中的姓名、班级、学号、组员信息补全。
-2. 安装 JDK 17，并在自己的电脑上执行 `mvn test package`。
+2. 安装 JDK 25，并在自己的电脑上执行 `mvn test package`。
 3. 启动项目，打开首页、Swagger 和 H2 控制台各检查一次。
 4. 在浏览器开发者工具中检查 1440px、768px、390px 三种宽度。
 5. 选择两个城市和一个污染物，确认三类图表和表格同步变化。
