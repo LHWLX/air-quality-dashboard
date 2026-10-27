@@ -1,14 +1,21 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:airquality-test;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:airquality-test;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
     driver-class-name: org.h2.Driver
     username: sa
     password:
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    open-in-view: false
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema.sql
   h2:
     console:
       enabled: false
+
+app:
+  data:
+    initialize: true
+    city-limit: 6
+    days: 120
+    batch-size: 500
 

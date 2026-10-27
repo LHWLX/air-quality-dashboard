@@ -7,4 +7,6 @@ target/
 data/
 *.log
 .DS_Store
+docs/*.mp4
+docs/~$*
 

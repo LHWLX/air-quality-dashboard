@@ -1,26 +1,20 @@
 package com.example.airquality.service;
 
 import com.example.airquality.dto.CityResponse;
-import com.example.airquality.repository.CityRepository;
+import com.example.airquality.mapper.CityMapper;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 public class CityService {
+    private final CityMapper cityMapper;
 
-    private final CityRepository cityRepository;
-
-    public CityService(CityRepository cityRepository) {
-        this.cityRepository = cityRepository;
+    public CityService(CityMapper cityMapper) {
+        this.cityMapper = cityMapper;
     }
 
-    @Transactional(readOnly = true)
     public List<CityResponse> findAll() {
-        return cityRepository.findAllByOrderByNameAsc().stream()
-                .map(CityResponse::from)
-                .toList();
+        return cityMapper.findAll().stream().map(CityResponse::from).toList();
     }
 }
-

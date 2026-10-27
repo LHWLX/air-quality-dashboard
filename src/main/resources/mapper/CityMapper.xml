@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.airquality.mapper.CityMapper">
+    <select id="count" resultType="long">SELECT COUNT(*) FROM cities</select>
+
+    <select id="findAll" resultType="com.example.airquality.domain.City">
+        SELECT id, code, name, region, longitude, latitude
+        FROM cities
+        ORDER BY name
+    </select>
+
+    <insert id="insert" parameterType="com.example.airquality.domain.City"
+            useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO cities(code, name, region, longitude, latitude)
+        VALUES(#{code}, #{name}, #{region}, #{longitude}, #{latitude})
+    </insert>
+</mapper>

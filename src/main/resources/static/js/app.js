@@ -2,8 +2,13 @@ const state = {
     cities: [],
     records: [],
     stats: [],
+    distribution: [],
+    ranking: [],
+    mapPoints: [],
     currentPage: 1,
     pageSize: 10,
+    totalElements: 0,
+    totalPages: 1,
     charts: {}
 };
 
@@ -33,6 +38,10 @@ const elements = {
     recordMetric: document.querySelector("#recordMetric"),
     peakCityMetric: document.querySelector("#peakCityMetric"),
     peakValueMetric: document.querySelector("#peakValueMetric"),
+    maximumMetric: document.querySelector("#maximumMetric"),
+    maximumUnit: document.querySelector("#maximumUnit"),
+    minimumMetric: document.querySelector("#minimumMetric"),
+    minimumUnit: document.querySelector("#minimumUnit"),
     trendSubtitle: document.querySelector("#trendSubtitle"),
     indicatorHeader: document.querySelector("#indicatorHeader"),
     tableBody: document.querySelector("#dataTableBody"),
@@ -100,6 +109,8 @@ function initializeCharts() {
     state.charts.trend = echarts.init(document.querySelector("#trendChart"));
     state.charts.comparison = echarts.init(document.querySelector("#comparisonChart"));
     state.charts.distribution = echarts.init(document.querySelector("#distributionChart"));
+    state.charts.ranking = echarts.init(document.querySelector("#rankingChart"));
+    state.charts.map = echarts.init(document.querySelector("#mapChart"));
 }
 
 function setDefaultDates() {
@@ -140,13 +151,20 @@ async function refreshDashboard() {
     try {
         setLoading(true);
         const query = buildQuery(filters);
-        const [records, stats] = await Promise.all([
-            requestJson(`/api/air-quality?${query}`),
-            requestJson(`/api/air-quality/stats?${query}`)
+        const [records, stats, distribution, ranking, mapPoints] = await Promise.all([
+            requestJson(`/api/air-quality/trend?${query}`),
+            requestJson(`/api/air-quality/stats?${query}`),
+            requestJson(`/api/air-quality/distribution?${query}`),
+            requestJson(`/api/air-quality/ranking?${query}&limit=10`),
+            requestJson(`/api/air-quality/map?${query}`)
         ]);
         state.records = records;
         state.stats = stats;
+        state.distribution = distribution;
+        state.ranking = ranking;
+        state.mapPoints = mapPoints;
         state.currentPage = 1;
+        await loadTablePage(query);
         renderDashboard(filters);
     } catch (error) {
         showToast(error.message);
@@ -201,6 +219,8 @@ function renderDashboard(filters) {
     renderTrendChart(indicator);
     renderComparisonChart(indicator);
     renderDistributionChart();
+    renderRankingChart(indicator);
+    renderMapChart(indicator);
     renderTable();
 }
 
@@ -220,6 +240,12 @@ function renderMetrics(indicator) {
     elements.peakValueMetric.textContent = peak
         ? `${formatNumber(peak.maximum)} ${indicator.unit}`.trim()
         : "--";
+    const maximum = state.stats.length ? Math.max(...state.stats.map(item => item.maximum)) : 0;
+    const minimum = state.stats.length ? Math.min(...state.stats.map(item => item.minimum)) : 0;
+    elements.maximumMetric.textContent = formatNumber(maximum);
+    elements.maximumUnit.textContent = indicator.unit || "指数";
+    elements.minimumMetric.textContent = formatNumber(minimum);
+    elements.minimumUnit.textContent = indicator.unit || "指数";
 }
 
 function renderTrendChart(indicator) {
@@ -317,19 +343,6 @@ function renderComparisonChart(indicator) {
 }
 
 function renderDistributionChart() {
-    const counts = new Map([
-        ["优良", 0],
-        ["轻度污染", 0],
-        ["中度污染", 0],
-        ["重度污染", 0]
-    ]);
-    state.records.forEach(record => {
-        const category = record.qualityLevel === "优" || record.qualityLevel === "良"
-            ? "优良"
-            : record.qualityLevel;
-        counts.set(category, (counts.get(category) ?? 0) + 1);
-    });
-
     state.charts.distribution.setOption({
         color: ["#1f8a70", "#d79d32", "#cc5d3f", "#a33b2f"],
         animationDuration: 500,
@@ -349,20 +362,41 @@ function renderDistributionChart() {
             itemStyle: { borderColor: "#ffffff", borderWidth: 3 },
             label: { show: false },
             emphasis: { label: { show: true, fontSize: 13, fontWeight: 700 } },
-            data: [...counts.entries()].map(([name, value]) => ({ name, value }))
+            data: state.distribution
         }]
     }, true);
 }
 
+function renderRankingChart(indicator) {
+    const rows = [...state.ranking].reverse();
+    state.charts.ranking.setOption({
+        color: ["#d79d32"],
+        tooltip: { trigger: "axis", valueFormatter: value => `${formatNumber(value)} ${indicator.unit}`.trim() },
+        grid: { left: 68, right: 28, top: 22, bottom: 28, containLabel: true },
+        xAxis: { type: "value", splitLine: { lineStyle: { color: "#edf0ee" } } },
+        yAxis: { type: "category", data: rows.map(item => item.cityName), axisTick: { show: false } },
+        series: [{ type: "bar", data: rows.map(item => item.value), barMaxWidth: 22 }]
+    }, true);
+}
+
+function renderMapChart(indicator) {
+    const values = state.mapPoints.map(item => item.value);
+    const min = values.length ? Math.min(...values) : 0;
+    const max = values.length ? Math.max(...values) : 1;
+    state.charts.map.setOption({
+        tooltip: { formatter: item => `${item.data.name}<br>${formatNumber(item.data.value[2])} ${indicator.unit}`.trim() },
+        grid: { left: 48, right: 28, top: 26, bottom: 40 },
+        xAxis: { name: "经度", min: 85, max: 130, splitLine: { lineStyle: { color: "#edf0ee" } } },
+        yAxis: { name: "纬度", min: 18, max: 48, splitLine: { lineStyle: { color: "#edf0ee" } } },
+        visualMap: { min, max, show: false, inRange: { color: ["#8fcbb7", "#d79d32", "#a33b2f"] } },
+        series: [{ type: "scatter", symbolSize: value => 10 + (value[2] - min) / Math.max(1, max - min) * 18,
+            data: state.mapPoints.map(item => ({ name: item.cityName, value: [item.longitude, item.latitude, item.value] })) }]
+    }, true);
+}
+
 function renderTable() {
-    const rows = [...state.records].sort((a, b) => {
-        const dateComparison = b.date.localeCompare(a.date);
-        return dateComparison || a.cityName.localeCompare(b.cityName, "zh-CN");
-    });
-    const pageCount = Math.max(1, Math.ceil(rows.length / state.pageSize));
-    state.currentPage = Math.min(state.currentPage, pageCount);
+    const pageRows = state.pageRecords || [];
     const startIndex = (state.currentPage - 1) * state.pageSize;
-    const pageRows = rows.slice(startIndex, startIndex + state.pageSize);
 
     if (pageRows.length === 0) {
         elements.tableBody.innerHTML = '<tr class="empty-row"><td colspan="6">当前筛选条件下没有监测记录</td></tr>';
@@ -379,17 +413,20 @@ function renderTable() {
         `).join("");
     }
 
-    elements.tableCount.textContent = `${rows.length} 条`;
-    elements.tableSummary.textContent = rows.length
-        ? `显示第 ${startIndex + 1}–${Math.min(startIndex + state.pageSize, rows.length)} 条，每页 10 条`
+    elements.tableCount.textContent = `${state.totalElements} 条`;
+    elements.tableSummary.textContent = state.totalElements
+        ? `显示第 ${startIndex + 1}–${Math.min(startIndex + state.pageSize, state.totalElements)} 条，每页 10 条`
         : "每页显示 10 条记录";
-    elements.pageIndicator.textContent = `第 ${state.currentPage} / ${pageCount} 页`;
+    elements.pageIndicator.textContent = `第 ${state.currentPage} / ${state.totalPages} 页`;
     elements.previousPage.disabled = state.currentPage <= 1;
-    elements.nextPage.disabled = state.currentPage >= pageCount;
+    elements.nextPage.disabled = state.currentPage >= state.totalPages;
 }
 
-function changePage(offset) {
+async function changePage(offset) {
     state.currentPage += offset;
+    const filters = readFilters();
+    if (!filters) return;
+    await loadTablePage(buildQuery(filters));
     renderTable();
     document.querySelector(".table-panel").scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -437,7 +474,15 @@ async function requestJson(url) {
         }
         throw new Error(message);
     }
-    return response.json();
+    const body = await response.json();
+    return body.data;
+}
+
+async function loadTablePage(query) {
+    const page = await requestJson(`/api/air-quality?${query}&page=${state.currentPage}&size=${state.pageSize}&sort=desc`);
+    state.pageRecords = page.content;
+    state.totalElements = page.totalElements;
+    state.totalPages = page.totalPages;
 }
 
 function groupBy(items, keySelector) {

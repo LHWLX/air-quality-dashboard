@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.airquality.mapper.AirQualityRecordMapper">
+    <sql id="filters">
+        <if test="cities != null and !cities.isEmpty()">
+            AND c.code IN
+            <foreach collection="cities" item="code" open="(" separator="," close=")">#{code}</foreach>
+        </if>
+        <if test="start != null">AND r.observed_date &gt;= #{start}</if>
+        <if test="end != null">AND r.observed_date &lt;= #{end}</if>
+    </sql>
+
+    <sql id="recordColumns">
+        r.id, r.city_id, c.code AS city_code, c.name AS city_name, c.region,
+        r.observed_date, r.pm25, r.pm10, r.so2, r.no2, r.o3, r.aqi, r.quality_level
+    </sql>
+
+    <select id="countAll" resultType="long">SELECT COUNT(*) FROM air_quality_records</select>
+
+    <insert id="insert" parameterType="com.example.airquality.domain.AirQualityRecord">
+        INSERT INTO air_quality_records(city_id, observed_date, pm25, pm10, so2, no2, o3, aqi, quality_level)
+        VALUES(#{cityId}, #{observedDate}, #{pm25}, #{pm10}, #{so2}, #{no2}, #{o3}, #{aqi}, #{qualityLevel})
+    </insert>
+
+    <select id="countByFilter" resultType="long">
+        SELECT COUNT(*) FROM air_quality_records r JOIN cities c ON c.id = r.city_id
+        WHERE 1 = 1 <include refid="filters"/>
+    </select>
+
+    <select id="findPage" resultType="com.example.airquality.domain.AirQualityRecord">
+        SELECT <include refid="recordColumns"/>
+        FROM air_quality_records r JOIN cities c ON c.id = r.city_id
+        WHERE 1 = 1 <include refid="filters"/>
+        ORDER BY r.observed_date ${sort}, ${indicatorColumn} DESC, c.name
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="findTrend" resultType="com.example.airquality.domain.AirQualityRecord">
+        SELECT <include refid="recordColumns"/>
+        FROM air_quality_records r JOIN cities c ON c.id = r.city_id
+        WHERE 1 = 1 <include refid="filters"/>
+        ORDER BY r.observed_date, c.name
+    </select>
+
+    <select id="findStats" resultType="com.example.airquality.dto.CityStatsResponse">
+        SELECT c.code AS city_code, c.name AS city_name,
+               #{indicator} AS indicator, #{indicatorName} AS indicator_name, #{unit} AS unit,
+               ROUND(AVG(${indicatorColumn}), 1) AS average,
+               ROUND(MAX(${indicatorColumn}), 1) AS maximum,
+               ROUND(MIN(${indicatorColumn}), 1) AS minimum,
+               ROUND(AVG(CASE WHEN r.quality_level IN ('优', '良') THEN 100.0 ELSE 0 END), 1) AS good_day_ratio,
+               COUNT(*) AS total_days
+        FROM air_quality_records r JOIN cities c ON c.id = r.city_id
+        WHERE 1 = 1 <include refid="filters"/>
+        GROUP BY c.id, c.code, c.name
+        ORDER BY c.name
+    </select>
+
+    <select id="findDistribution" resultType="com.example.airquality.dto.DistributionResponse">
+        SELECT CASE WHEN r.quality_level IN ('优', '良') THEN '优良' ELSE r.quality_level END AS name,
+               COUNT(*) AS `value`
+        FROM air_quality_records r JOIN cities c ON c.id = r.city_id
+        WHERE 1 = 1 <include refid="filters"/>
+        GROUP BY CASE WHEN r.quality_level IN ('优', '良') THEN '优良' ELSE r.quality_level END
+        ORDER BY `value` DESC
+    </select>
+
+    <select id="findRanking" resultType="com.example.airquality.dto.RankingResponse">
+        SELECT c.code AS city_code, c.name AS city_name, ROUND(AVG(${indicatorColumn}), 1) AS `value`
+        FROM air_quality_records r JOIN cities c ON c.id = r.city_id
+        WHERE 1 = 1 <include refid="filters"/>
+        GROUP BY c.id, c.code, c.name
+        ORDER BY `value` DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findMapPoints" resultType="com.example.airquality.dto.MapPointResponse">
+        SELECT c.code AS city_code, c.name AS city_name, c.region, c.longitude, c.latitude,
+               ROUND(AVG(${indicatorColumn}), 1) AS `value`
+        FROM air_quality_records r JOIN cities c ON c.id = r.city_id
+        WHERE 1 = 1 <include refid="filters"/>
+        GROUP BY c.id, c.code, c.name, c.region, c.longitude, c.latitude
+        ORDER BY c.name
+    </select>
+
+    <select id="findById" resultType="com.example.airquality.domain.AirQualityRecord">
+        SELECT <include refid="recordColumns"/>
+        FROM air_quality_records r JOIN cities c ON c.id = r.city_id
+        WHERE r.id = #{id}
+    </select>
+</mapper>

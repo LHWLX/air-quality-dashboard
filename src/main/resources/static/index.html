@@ -97,6 +97,16 @@
                 <strong class="metric-city" id="peakCityMetric">--</strong>
                 <span class="metric-unit" id="peakValueMetric">--</span>
             </article>
+            <article class="metric-card">
+                <span class="metric-label">最高值</span>
+                <strong id="maximumMetric">--</strong>
+                <span class="metric-unit" id="maximumUnit">--</span>
+            </article>
+            <article class="metric-card">
+                <span class="metric-label">最低值</span>
+                <strong id="minimumMetric">--</strong>
+                <span class="metric-unit" id="minimumUnit">--</span>
+            </article>
         </section>
 
         <section class="chart-panel trend-panel">
@@ -128,6 +138,27 @@
                     </div>
                 </div>
                 <div class="chart" id="distributionChart" role="img" aria-label="空气质量等级环形图"></div>
+            </section>
+        </div>
+
+        <div class="chart-grid">
+            <section class="chart-panel">
+                <div class="chart-heading">
+                    <div>
+                        <h3>城市 Top N 排行</h3>
+                        <p>按当前指标均值由高到低排序</p>
+                    </div>
+                </div>
+                <div class="chart" id="rankingChart" role="img" aria-label="城市指标排行图"></div>
+            </section>
+            <section class="chart-panel">
+                <div class="chart-heading">
+                    <div>
+                        <h3>城市空间分布</h3>
+                        <p>按经纬度展示监测值分布</p>
+                    </div>
+                </div>
+                <div class="chart" id="mapChart" role="img" aria-label="城市空间分布图"></div>
             </section>
         </div>
 

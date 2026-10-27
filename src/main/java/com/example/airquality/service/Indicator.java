@@ -39,6 +39,17 @@ public enum Indicator {
         };
     }
 
+    public String getColumnName() {
+        return switch (this) {
+            case PM25 -> "pm25";
+            case PM10 -> "pm10";
+            case SO2 -> "so2";
+            case NO2 -> "no2";
+            case O3 -> "o3";
+            case AQI -> "aqi";
+        };
+    }
+
     public static Indicator parse(String value) {
         if (value == null || value.isBlank()) {
             return PM25;
